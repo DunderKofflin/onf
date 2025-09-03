@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레스토랑 매출 대시보드</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            color: #333;
+        }
+        
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        
+        .last-updated {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        .kpi-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .kpi-card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+        
+        .kpi-card:active {
+            transform: scale(0.98);
+        }
+        
+        .kpi-card h3 {
+            color: #666;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        
+        .kpi-change {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        
+        .positive { background: #d4edda; color: #155724; }
+        .neutral { background: #e2e3e5; color: #6c757d; }
+        
+        .chart-container {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .chart-title {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+        
+        .brand-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .brand-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease;
+        }
+        
+        .brand-card:active {
+            transform: scale(0.98);
+        }
+        
+        .brand-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+        
+        .brand-name {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #2c3e50;
+        }
+        
+        .brand-type {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .brand-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .metric {
+            text-align: center;
+        }
+        
+        .metric-label {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        
+        .metric-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #2c3e50;
+        }
+        
+        .store-list {
+            margin-top: 10px;
+        }
+        
+        .store-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .store-item:last-child {
+            border-bottom: none;
+        }
+        
+        .store-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .store-sales {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #28a745;
+        }
+        
+        .store-cost {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+        
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #6c757d;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+        
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .alert-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+        
+        .alert-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .alert-text {
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+            
+            .header h1 {
+                font-size: 1.4rem;
+            }
+            
+            .kpi-cards {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .brand-overview {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                padding: 15px;
+            }
+        }
+        
+        .chart-canvas {
+            position: relative;
+            height: 200px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🍽️ 매출 현황 대시보드</h1>
+            <div class="last-updated">마지막 업데이트: <span id="lastUpdate"></span></div>
+        </div>
+        
+        <div class="kpi-cards">
+            <div class="kpi-card">
+                <h3>8월 총 매출</h3>
+                <div class="kpi-value">5.7억</div>
+                <div class="kpi-change positive">+9.6% ↗</div>
+            </div>
+            <div class="kpi-card">
+                <h3>평균 원가율</h3>
+                <div class="kpi-value">34.3%</div>
+                <div class="kpi-change neutral">직영점 기준</div>
+            </div>
+            <div class="kpi-card">
+                <h3>운영 매장</h3>
+                <div class="kpi-value">9개</div>
+                <div class="kpi-change neutral">4개 브랜드</div>
+            </div>
+            <div class="kpi-card">
+                <h3>일평균 매출</h3>
+                <div class="kpi-value">1,838만</div>
+                <div class="kpi-change positive">8월 기준</div>
+            </div>
+        </div>
+        
+        <div class="alert-box">
+            <div class="alert-title">⚠️ 주의 매장</div>
+            <div class="alert-text">키타야 행궁점: 원가율 37.56% (목표 35% 초과)<br>오테이블 행궁/목동: 가맹점 원가 데이터 누락</div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('overview')">전체 현황</div>
+            <div class="tab" onclick="switchTab('monthly')">월별 추이</div>
+            <div class="tab" onclick="switchTab('comparison')">브랜드 비교</div>
+        </div>
+        
+        <div id="overview-tab">
+            <div class="chart-container">
+                <div class="chart-title">📊 월별 전체 매출 추이</div>
+                <div class="chart-canvas">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="brand-overview">
+                <div class="brand-card">
+                    <div class="brand-header">
+                        <div class="brand-name">오테이블</div>
+                        <div class="brand-type">직영+가맹</div>
+                    </div>
+                    <div class="brand-metrics">
+                        <div class="metric">
+                            <div class="metric-label">총 매출</div>
+                            <div class="metric-value">14.7억</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">평균 원가율</div>
+                            <div class="metric-value">36.1%</div>
+                        </div>
+                    </div>
+                    <div class="store-list">
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">광교점 (직영)</div>
+                                <div class="store-cost">8월 원가율: 34.88%</div>
+                            </div>
+                            <div class="store-sales">1.09억</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">행궁점 (가맹)</div>
+                                <div class="store-cost">원가 데이터 없음</div>
+                            </div>
+                            <div class="store-sales">5,373만</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">목동점 (가맹)</div>
+                                <div class="store-cost">3월 오픈</div>
+                            </div>
+                            <div class="store-sales">4,230만</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-header">
+                        <div class="brand-name">오이탈리안</div>
+                        <div class="brand-type">직영+가맹</div>
+                    </div>
+                    <div class="brand-metrics">
+                        <div class="metric">
+                            <div class="metric-label">총 매출</div>
+                            <div class="metric-value">10.7억</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">평균 원가율</div>
+                            <div class="metric-value">33.3%</div>
+                        </div>
+                    </div>
+                    <div class="store-list">
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">광교점 (직영)</div>
+                                <div class="store-cost">8월 원가율: 32.65%</div>
+                            </div>
+                            <div class="store-sales">1.11억</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">동탄점 (가맹)</div>
+                                <div class="store-cost">8월 원가율: 34.26%</div>
+                            </div>
+                            <div class="store-sales">3,496만</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-header">
+                        <div class="brand-name">키타야</div>
+                        <div class="brand-type">직영+가맹</div>
+                    </div>
+                    <div class="brand-metrics">
+                        <div class="metric">
+                            <div class="metric-label">총 매출</div>
+                            <div class="metric-value">10.2억</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">평균 원가율</div>
+                            <div class="metric-value">34.3%</div>
+                        </div>
+                    </div>
+                    <div class="store-list">
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">광교점 (직영)</div>
+                                <div class="store-cost">8월 원가율: 35.30%</div>
+                            </div>
+                            <div class="store-sales">5,455만</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">행궁점 (직영)</div>
+                                <div class="store-cost">8월 원가율: 37.56% ⚠️</div>
+                            </div>
+                            <div class="store-sales">2,755만</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">수원역점 (가맹)</div>
+                                <div class="store-cost">8월 원가율: 33.04%</div>
+                            </div>
+                            <div class="store-sales">6,349만</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-header">
+                        <div class="brand-name">루베르데</div>
+                        <div class="brand-type">직영</div>
+                    </div>
+                    <div class="brand-metrics">
+                        <div class="metric">
+                            <div class="metric-label">총 매출</div>
+                            <div class="metric-value">3.9억</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">평균 원가율</div>
+                            <div class="metric-value">33.6%</div>
+                        </div>
+                    </div>
+                    <div class="store-list">
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">광교점 (직영)</div>
+                                <div class="store-cost">8월 원가율: 31.44%</div>
+                            </div>
+                            <div class="store-sales">7,277만</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">3월 오픈</div>
+                                <div class="store-cost">신규 매장</div>
+                            </div>
+                            <div class="store-sales">6개월 운영</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="monthly-tab" style="display: none;">
+            <div class="chart-container">
+                <div class="chart-title">📈 브랜드별 월 매출 상세</div>
+                <div class="chart-canvas">
+                    <canvas id="brandChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">💰 원가율 추이 (직영점)</div>
+                <div class="chart-canvas">
+                    <canvas id="costChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div id="comparison-tab" style="display: none;">
+            <div class="chart-container">
+                <div class="chart-title">🏆 8월 매장별 성과 순위</div>
+                <div class="chart-canvas">
+                    <canvas id="rankingChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="kpi-cards">
+                <div class="kpi-card">
+                    <h3>최고 매출 매장</h3>
+                    <div class="kpi-value">오이탈리안</div>
+                    <div class="kpi-change positive">광교점 1.11억</div>
+                </div>
+                <div class="kpi-card">
+                    <h3>최저 원가율</h3>
+                    <div class="kpi-value">루베르데</div>
+                    <div class="kpi-change positive">광교점 31.44%</div>
+                </div>
+                <div class="kpi-card">
+                    <h3>성장률 1위</h3>
+                    <div class="kvi-value">목동점</div>
+                    <div class="kpi-change positive">3월 신규오픈</div>
+                </div>
+                <div class="kpi-card">
+                    <h3>개선 필요</h3>
+                    <div class="kpi-value">키타야</div>
+                    <div class="kpi-change neutral">행궁점 37.56%</div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="refresh-btn" onclick="refreshData()">🔄 새로고침</button>
+    </div>
+    
+    <script>
+        let salesChart, brandChart, costChart, rankingChart;
+        
+        // 실제 데이터
+        const monthlyData = {
+            labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
+            totals: [3.9, 3.7, 5.1, 5.2, 5.5, 5.2, 5.2, 5.7]
+        };
+        
+        const brandData = {
+            '오테이블': [1.46, 1.39, 1.80, 2.09, 2.30, 1.92, 1.73, 2.05],
+            '오이탈리안': [1.36, 1.28, 1.38, 1.19, 1.33, 1.27, 1.40, 1.46],
+            '키타야': [1.08, 1.03, 1.32, 1.21, 1.31, 1.40, 1.38, 1.46],
+            '루베르데': [0, 0, 0.57, 0.69, 0.60, 0.64, 0.71, 0.73]
+        };
+        
+        const costRateData = {
+            '오테이블': [35.83, 38.33, 34.30, 36.92, 36.77, 33.58, 38.39, 34.88],
+            '오이탈리안': [32.29, 36.84, 31.28, 31.65, 36.05, 33.31, 36.25, 32.65],
+            '키타야': [34.36, 34.49, 32.62, 35.28, 34.04, 32.86, 35.03, 35.30],
+            '루베르데': [null, null, 33.90, 36.44, 31.16, 33.63, 35.02, 31.44]
+        };
+        
+        // 현재 시간 업데이트
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = 
+                now.toLocaleString('ko-KR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+        }
+        
+        // 탭 전환
+        function switchTab(tabName) {
+            // 탭 버튼 업데이트
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // 탭 내용 전환
+            document.querySelectorAll('[id$="-tab"]').forEach(tab => tab.style.display = 'none');
+            document.getElementById(tabName + '-tab').style.display = 'block';
+            
+            // 차트 생성/업데이트
+            setTimeout(() => {
+                if (tabName === 'overview' && !salesChart) {
+                    createSalesChart();
+                } else if (tabName === 'monthly') {
+                    createBrandChart();
+                    createCostChart();
+                } else if (tabName === 'comparison') {
+                    createRankingChart();
+                }
+            }, 100);
+        }
+        
+        // 전체 매출 차트
+        function createSalesChart() {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            
+            if (salesChart) {
+                salesChart.destroy();
+            }
+            
+            salesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthlyData.labels,
+                    datasets: [{
+                        label: '총 매출 (억원)',
+                        data: monthlyData.totals,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 3,
+                            max: 6,
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 브랜드별 차트
+        function createBrandChart() {
+            const ctx = document.getElementById('brandChart').getContext('2d');
+            
+            if (brandChart) {
+                brandChart.destroy();
+            }
+            
+            const datasets = Object.keys(brandData).map((brand, index) => {
+                const colors = ['#667eea', '#f093fb', '#4facfe', '#43e97b'];
+                return {
+                    label: brand,
+                    data: brandData[brand],
+                    borderColor: colors[index],
+                    backgroundColor: colors[index] + '20',
+                    borderWidth: 2,
+                    tension: 0.3
+                };
+            });
+            
+            brandChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthlyData.labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: { size: 11 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 원가율 차트
+        function createCostChart() {
+            const ctx = document.getElementById('costChart').getContext('2d');
+            
+            if (costChart) {
+                costChart.destroy();
+            }
+            
+            const datasets = Object.keys(costRateData).map((brand, index) => {
+                const colors = ['#667eea', '#f093fb', '#4facfe', '#43e97b'];
+                return {
+                    label: brand,
+                    data: costRateData[brand],
+                    borderColor: colors[index],
+                    backgroundColor: colors[index] + '20',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    spanGaps: true
+                };
+            });
+            
+            costChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthlyData.labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: { size: 11 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 25,
+                            max: 40,
+                            grid: { color: 'rgba(0,0,0,0.1)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 순위 차트
+        function createRankingChart() {
+            const ctx = document.getElementById('rankingChart').getContext('2d');
+            
+            if (rankingChart) {
+                rankingChart.destroy();
+            }
+            
+            const rankingData = {
+                labels: ['오이탈리안\n광교', '오테이블\n광교', '루베르데\n광교', '키타야\n수원역', '키타야\n광교', '오테이블\n행궁', '오이탈리안\n동탄', '키타야\n행궁', '오테이블\n목동'],
+                sales: [11063, 10926, 7277, 6349, 5455, 5373, 3496, 2755, 4230],
+                costRates: [32.65, 34.88, 31.44, 33.04, 35.30, null, 34.26, 37.56, null]
+            };
+            
+            rankingChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: rankingData.labels,
+                    datasets: [{
+                        label: '8월 매출 (만원)',
+                        data: rankingData.sales,
+                        backgroundColor: rankingData.sales.map((_, index) => {
+                            const colors = ['#28a745', '#20c997', '#17a2b8', '#6f42c1', '#6c757d', '#fd7e14', '#ffc107', '#dc3545', '#e83e8c'];
+                            return colors[index] || '#6c757d';
+                        }),
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.1)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString() + '만';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 0,
+                                font: { size: 10 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 데이터 새로고침
+        function refreshData() {
+            const btn = document.querySelector('.refresh-btn');
+            btn.innerHTML = '🔄 업데이트...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                updateTime();
+                btn.innerHTML = '🔄 새로고침';
+                btn.disabled = false;
+                
+                // 애니메이션 효과
+                document.querySelectorAll('.kpi-card, .brand-card, .chart-container').forEach(card => {
+                    card.style.transform = 'scale(1.01)';
+                    setTimeout(() => {
+                        card.style.transform = '';
+                    }, 150);
+                });
+            }, 1000);
+        }
+        
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTime();
+            createSalesChart();
+            
+            // 자동 업데이트 (5분마다)
+            setInterval(updateTime, 300000);
+        });
+    </script>
+</body>
+</html> 
