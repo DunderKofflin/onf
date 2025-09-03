@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레스토랑 매출 대시보드</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🍽️ 매출 현황 대시보드</h1>
+            <div class="last-updated">마지막 업데이트: <span id="lastUpdate"></span></div>
+        </div>
+        
+        <div class="kpi-cards">
+            <div class="kpi-card">
+                <h3>8월 총 매출</h3>
+                <div class="kpi-value">5.7억</div>
+                <div class="kpi-change positive">+9.6% ↗</div>
+            </div>
+            <div class="kpi-card">
+                <h3>평균 원가율</h3>
+                <div class="kpi-value">34.3%</div>
+                <div class="kpi-change neutral">직영점 기준</div>
+            </div>
+            <div class="kpi-card">
+                <h3>운영 매장</h3>
+                <div class="kpi-value">9개</div>
+                <div class="kpi-change neutral">4개 브랜드</div>
+            </div>
+            <div class="kpi-card">
+                <h3>일평균 매출</h3>
+                <div class="kpi-value">1,838만</div>
+                <div class="kpi-change positive">8월 기준</div>
+            </div>
+        </div>
+        
+        <div class="alert-box">
+            <div class="alert-title">⚠️ 주의 매장</div>
+            <div class="alert-text">키타야 행궁점: 원가율 37.56% (목표 35% 초과)<br>오테이블 행궁/목동: 가맹점 원가 데이터 누락</div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('overview')">전체 현황</div>
+            <div class="tab" onclick="switchTab('monthly')">월별 추이</div>
+            <div class="tab" onclick="switchTab('comparison')">브랜드 비교</div>
+        </div>
+        
+        <div id="overview-tab">
+            <div class="chart-container">
+                <div class="chart-title">📊 월별 전체 매출 추이</div>
+                <div class="chart-canvas">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="brand-overview">
+                <div class="brand-card">
+                    <div class="brand-header">
+                        <div class="brand-name">오테이블</div>
+                        <div class="brand-type">직영+가맹</div>
+                    </div>
+                    <div class="brand-metrics">
+                        <div class="metric">
+                            <div class="metric-label">총 매출</div>
+                            <div class="metric-value">14.7억</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">평균 원가율</div>
+                            <div class="metric-value">36.1%</div>
+                        </div>
+                    </div>
+                    <div class="store-list">
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">광교점 (직영)</div>
+                                <div class="store-cost">8월 원가율: 34.88%</div>
+                            </div>
+                            <div class="store-sales">1.09억</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">행궁점 (가맹)</div>
+                                <div class="store-cost">원가 데이터 없음</div>
+                            </div>
+                            <div class="store-sales">5,373만</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">목동점 (가맹)</div>
+                                <div class="store-cost">3월 오픈</div>
+                            </div>
+                            <div class="store-sales">4,230만</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-header">
+                        <div class="brand-name">오이탈리안</div>
+                        <div class="brand-type">직영+가맹</div>
+                    </div>
+                    <div class="brand-metrics">
+                        <div class="metric">
+                            <div class="metric-label">총 매출</div>
+                            <div class="metric-value">10.7억</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">평균 원가율</div>
+                            <div class="metric-value">33.3%</div>
+                        </div>
+                    </div>
+                    <div class="store-list">
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">광교점 (직영)</div>
+                                <div class="store-cost">8월 원가율: 32.65%</div>
+                            </div>
+                            <div class="store-sales">1.11억</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">동탄점 (가맹)</div>
+                                <div class="store-cost">8월 원가율: 34.26%</div>
+                            </div>
+                            <div class="store-sales">3,496만</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-header">
+                        <div class="brand-name">키타야</div>
+                        <div class="brand-type">직영+가맹</div>
+                    </div>
+                    <div class="brand-metrics">
+                        <div class="metric">
+                            <div class="metric-label">총 매출</div>
+                            <div class="metric-value">10.2억</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">평균 원가율</div>
+                            <div class="metric-value">34.3%</div>
+                        </div>
+                    </div>
+                    <div class="store-list">
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">광교점 (직영)</div>
+                                <div class="store-cost">8월 원가율: 35.30%</div>
+                            </div>
+                            <div class="store-sales">5,455만</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">행궁점 (직영)</div>
+                                <div class="store-cost">8월 원가율: 37.56% ⚠️</div>
+                            </div>
+                            <div class="store-sales">2,755만</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">수원역점 (가맹)</div>
+                                <div class="store-cost">8월 원가율: 33.04%</div>
+                            </div>
+                            <div class="store-sales">6,349만</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-header">
+                        <div class="brand-name">루베르데</div>
+                        <div class="brand-type">직영</div>
+                    </div>
+                    <div class="brand-metrics">
+                        <div class="metric">
+                            <div class="metric-label">총 매출</div>
+                            <div class="metric-value">3.9억</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">평균 원가율</div>
+                            <div class="metric-value">33.6%</div>
+                        </div>
+                    </div>
+                    <div class="store-list">
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">광교점 (직영)</div>
+                                <div class="store-cost">8월 원가율: 31.44%</div>
+                            </div>
+                            <div class="store-sales">7,277만</div>
+                        </div>
+                        <div class="store-item">
+                            <div>
+                                <div class="store-name">3월 오픈</div>
+                                <div class="store-cost">신규 매장</div>
+                            </div>
+                            <div class="store-sales">6개월 운영</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="monthly-tab" style="display: none;">
+            <div class="chart-container">
+                <div class="chart-title">📈 브랜드별 월 매출 상세</div>
+                <div class="chart-canvas">
+                    <canvas id="brandChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">💰 원가율 추이 (직영점)</div>
+                <div class="chart-canvas">
+                    <canvas id="costChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div id="comparison-tab" style="display: none;">
+            <div class="chart-container">
+                <div class="chart-title">🏆 8월 매장별 성과 순위</div>
+                <div class="chart-canvas">
+                    <canvas id="rankingChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="kpi-cards">
+                <div class="kpi-card">
+                    <h3>최고 매출 매장</h3>
+                    <div class="kpi-value">오이탈리안</div>
+                    <div class="kpi-change positive">광교점 1.11억</div>
+                </div>
+                <div class="kpi-card">
+                    <h3>최저 원가율</h3>
+                    <div class="kpi-value">루베르데</div>
+                    <div class="kpi-change positive">광교점 31.44%</div>
+                </div>
+                <div class="kpi-card">
+                    <h3>성장률 1위</h3>
+                    <div class="kpi-value">목동점</div>
+                    <div class="kpi-change positive">3월 신규오픈</div>
+                </div>
+                <div class="kpi-card">
+                    <h3>개선 필요</h3>
+                    <div class="kpi-value">키타야</div>
+                    <div class="kpi-change neutral">행궁점 37.56%</div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="refresh-btn" onclick="refreshData()">🔄 새로고침</button>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
